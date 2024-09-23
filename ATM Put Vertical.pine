@@ -1,0 +1,63 @@
+// Baileysoft Solutions © 2016-2026 
+// Author: Neal Bailey 
+//         https://www.tradingview.com/u/nealosis/ 
+//         https://www.youtube.com/channel/UCWLOB6VrnIHc1QBMpCXUi4A/
+//         https://www.journeymaninvestor.com/
+//
+// This source code is subject to the terms of the Mozilla Public License 2.0
+// https://mozilla.org/MPL/2.0/
+//
+// ---------------------------------------------------------------------------
+// This is a bullish options income strategy. The trade is setup every monday morning at market open and expires every Friday at market close. 
+// The strategy extracts weekly income from the price spread between selling the first in-the-money put and buying the first out-of-the-money put. 
+// The risk to reward should be 1:1 (e.g risk $500 to win $500). The edge in this strategy is that the S&P500 index typically closes higher on the 
+// week roughly ~80% of the time. 
+// ---------------------------------------------------------------------------
+//@version=5
+strategy('ATM Put Vertical (Baileysoft)', overlay=true)
+
+// --------------------
+// Strategy Rules
+// --------------------
+// ** Set chart to Weekly (not daily!) bars **
+//
+// 1. SPY must be trading above its 10 week moving average
+// 2. Buy the $SPY put directly below the current price as soon as the market opens on Monday morning
+// 3. Sell the ITM $SPY put directly above the current price as soon as the market opens on Monday morning
+//
+// Risk to Ratio should be 1:1 (e.g. risk $500 to win $500)
+//
+
+// The strategy range (dates)
+testStartYear = input(2017, 'Backtest Start Year')
+testStartMonth = input(01, 'Backtest Start Month')
+testStartDay = input(1, 'Backtest Start Day')
+testPeriodStart = timestamp(testStartYear, testStartMonth, testStartDay, 0, 0)
+
+testStopYear = input(2024, 'Backtest Stop Year')
+testStopMonth = input(12, 'Backtest Stop Month')
+testStopDay = input(30, 'Backtest Stop Day')
+testPeriodStop = timestamp(testStopYear, testStopMonth, testStopDay, 0, 0)
+
+// A switch to control background coloring of the test period
+testPeriodBackground = input(title='Color Background?', defval=true)
+testPeriodBackgroundColor = testPeriodBackground and time >= testPeriodStart and time <= testPeriodStop ? #6c6f6c : na
+bgcolor(testPeriodBackgroundColor, transp=97)
+
+// Determine if current bar is within range
+// @returns boolean true or false
+testPeriod() =>
+    time >= testPeriodStart and time <= testPeriodStop ? true : false
+
+longWMA = ta.wma(close, 10)  // 10 week moving average
+// Get the open price of the current week's candle
+curr_week_open = request.security(syminfo.tickerid, "W", open)
+// Get the close price of the current week's candle
+curr_week_close = request.security(syminfo.tickerid, "W", close)
+
+longCondition = close > longWMA  // Phase One Entry Condition
+if longCondition and testPeriod()
+    strategy.entry('VERTICAL', strategy.long, 10, when=close >= curr_week_open)
+    strategy.close('VERTICAL', when=close == curr_week_close)
+
+
