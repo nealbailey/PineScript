@@ -14,7 +14,7 @@
 // Or you could use a defined risk entry such as a put/call credit spread and collect the premium. 
 // ---------------------------------------------------------------------------
 //@version=5
-strategy(title='Basic Bollinger (Baileysoft)', overlay=true)
+strategy(title='Basic Bollinger (Baileysoft)', overlay=true, process_orders_on_close = true)
 
 // --------------------
 // Strategy Rules
@@ -66,7 +66,7 @@ longCondition = ta.crossover(close, lowerBand)
 closeLongCondition = close >= upperBand -1 // Just below top band
 
 if longCondition and testPeriod()
-    strategy.entry(id='CALL', direction=strategy.long, qty=100)
+    strategy.entry(id='CALL', direction=strategy.long, qty=10)
 
 strategy.close(id='CALL', when=closeLongCondition)
 
