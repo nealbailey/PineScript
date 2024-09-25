@@ -1,0 +1,65 @@
+// Baileysoft Solutions © 2016-2026 
+// Author: Neal Bailey 
+//         https://www.journeymaninvestor.com/
+//         https://www.tradingview.com/u/nealosis/ 
+//         https://www.youtube.com/channel/UCWLOB6VrnIHc1QBMpCXUi4A/
+//
+// This source code is subject to the terms of the Mozilla Public License 2.0
+// https://mozilla.org/MPL/2.0/
+//
+// ---------------------------------------------------------------------------
+// This is a bullish trading strategy. There are a number of ways to trade this strategy. 
+// The easiest would be to simply buy shares of the stock when the buy signal is triggered. 
+// The most profitable method would be to buy an in-the-money calls around the 70-80 delta. 
+// Or you could use a defined risk entry such as a put credit spread and collect the premium. 
+// ---------------------------------------------------------------------------
+//@version=5
+strategy('RSI Powerzones', overlay=true)
+
+// --------------------
+// Strategy Rules
+// --------------------
+// ** Set chart to daily bars **
+//
+// 1. $SPY must be trading above its 200-day simple moving average. 
+// 2. When the 4-period RSI of $SPY closes under 30 buy $SPY on the close.
+// 3. Buy a second unit if the 4-period RSI closes below 25 at any time while the position is open (doubling your position).
+// 4. Sell when the 4-period RSI closes above 55
+//
+// Prefer 70-80 delta in-the-money call contracts
+
+// User provided values
+testStartYear = input(2004, 'Backtest Start Year')
+testStartMonth = input(01, 'Backtest Start Month')
+testStartDay = input(1, 'Backtest Start Day')
+testPeriodStart = timestamp(testStartYear, testStartMonth, testStartDay, 0, 0)
+
+testStopYear = input(2030, 'Backtest Stop Year')
+testStopMonth = input(12, 'Backtest Stop Month')
+testStopDay = input(30, 'Backtest Stop Day')
+testPeriodStop = timestamp(testStopYear, testStopMonth, testStopDay, 0, 0)
+
+// A switch to control background coloring of the test period
+testPeriodBackground = input(title='Color Background?', defval=true)
+testPeriodBackgroundColor = testPeriodBackground and time >= testPeriodStart and time <= testPeriodStop ? #6c6f6c : na
+bgcolor(testPeriodBackgroundColor, transp=97)
+
+// Entry and exit RSI readings
+RSIEntry = input(30, 'RSI Entry')
+RSIExit = input(55, 'RSI Exit')
+RSILength = input(4, 'RSI Length')
+
+// Determine if current bar is within range
+// @returns boolean true or false
+testPeriod() =>
+    time >= testPeriodStart and time <= testPeriodStop ? true : false
+
+longSMA = ta.sma(close, 200)  // 200-day moving average
+rsi = ta.rsi(close, RSILength)  // relative strength indicator with custom length
+
+longCondition = close > longSMA  // closing price is above 200-day sma 
+
+if longCondition and testPeriod()
+    strategy.entry('CALL', strategy.long, 10, when=rsi <= RSIEntry)
+    strategy.close('CALL', when=rsi >= RSIExit)
+
