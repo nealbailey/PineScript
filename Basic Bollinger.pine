@@ -1,0 +1,73 @@
+// Baileysoft Solutions © 2016-2026 
+// Author: Neal Bailey 
+//         https://www.journeymaninvestor.com/
+//         https://www.tradingview.com/u/nealosis/ 
+//         https://www.youtube.com/channel/UCWLOB6VrnIHc1QBMpCXUi4A/
+//
+// This source code is subject to the terms of the Mozilla Public License 2.0
+// https://mozilla.org/MPL/2.0/
+//
+// ---------------------------------------------------------------------------
+// This is a directional trading strategy. There are a number of ways to trade this strategy. 
+// The easiest would be to simply buy/short shares of the stock when the signals are triggered. 
+// The most profitable method would be to buy an in-the-money calls/puts around the 70-80 delta. 
+// Or you could use a defined risk entry such as a put/call credit spread and collect the premium. 
+// ---------------------------------------------------------------------------
+//@version=5
+strategy(title='Basic Bollinger (Baileysoft)', overlay=true)
+
+// --------------------
+// Strategy Rules
+// --------------------
+// ** Set chart to daily bars **
+//
+// 1. Set Bollinger Bands Moving Average Length to 20 
+// 2. Enter trade when price crosses above the lower band
+// 3. Exit trade when price touches the upper band
+//
+
+// Chart Properties
+testStartYear = input(2010, 'Backtest Start Year')
+testStartMonth = input(01, 'Backtest Start Month')
+testStartDay = input(1, 'Backtest Start Day')
+testPeriodStart = timestamp(testStartYear, testStartMonth, testStartDay, 0, 0)
+
+testStopYear = input(2030, 'Backtest Stop Year')
+testStopMonth = input(12, 'Backtest Stop Month')
+testStopDay = input(30, 'Backtest Stop Day')
+testPeriodStop = timestamp(testStopYear, testStopMonth, testStopDay, 0, 0)
+
+// A switch to control background coloring of the test period
+testPeriodBackground = input(title='Color Background?', defval=true)
+testPeriodBackgroundColor = testPeriodBackground and time >= testPeriodStart and time <= testPeriodStop ? #6c6f6c : na
+bgcolor(testPeriodBackgroundColor, transp=97)
+
+// User provided values
+smaLength = input(title='SMA Length', defval=20)  // Middle band period length (moving average)
+stdLength = input(title='StdDev Length', defval=20)  // Range to apply bands to
+ubOffset = input.float(title='Upper Band Offset', defval=2.0, step=0.5)  // Number of standard deviations above MA
+lbOffset = input.float(title='Lower Band Offset', defval=2.0, step=0.5)  // Number of standard deviation below MA
+
+testPeriod() =>
+    time >= testPeriodStart and time <= testPeriodStop ? true : false
+
+smaValue = ta.sma(close, smaLength)  // Middle band
+stdDev = ta.stdev(close, stdLength)
+upperBand = smaValue + stdDev * ubOffset  // Top band
+lowerBand = smaValue - stdDev * lbOffset  // Bottom band
+
+// Plot bands to chart
+plot(series=smaValue, title='SMA', color=color.new(color.blue, 0))
+plot(series=upperBand, title='UB', color=color.new(color.green, 0), linewidth=2)
+plot(series=lowerBand, title='LB', color=color.new(color.red, 0), linewidth=2)
+
+longCondition = ta.crossover(close, lowerBand)
+//closeLongCondition = close >= upperBand
+closeLongCondition = close >= upperBand -1 // Just below top band
+
+if longCondition and testPeriod()
+    strategy.entry(id='CALL', direction=strategy.long, qty=100)
+
+strategy.close(id='CALL', when=closeLongCondition)
+
+
