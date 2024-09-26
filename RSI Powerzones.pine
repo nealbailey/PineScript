@@ -47,7 +47,8 @@ testPeriodStop = timestamp(testStopYear, testStopMonth, testStopDay, 0, 0)
 // A switch to control background coloring of the test period
 testPeriodBackground = input(title='Color Background?', defval=true)
 testPeriodBackgroundColor = testPeriodBackground and time >= testPeriodStart and time <= testPeriodStop ? #6c6f6c : na
-bgcolor(testPeriodBackgroundColor, transp=97)
+colorItem = color.new(testPeriodBackgroundColor, transp = 94)
+bgcolor(colorItem)
 
 // Entry and exit RSI readings
 RSIEntry = input(30, 'RSI Entry')
@@ -62,9 +63,11 @@ testPeriod() =>
 longSMA = ta.sma(close, 200)  // 200-day moving average
 rsi = ta.rsi(close, RSILength)  // relative strength indicator with custom length
 
-longCondition = close > longSMA  // closing price is above 200-day sma 
+longCondition = close > longSMA and rsi <= RSIEntry  // Enter
+closeLongCondition = rsi >= RSIExit // Exit
 
 if longCondition and testPeriod()
-    strategy.entry('CALL', strategy.long, 10, when=rsi <= RSIEntry)
-    strategy.close('CALL', when=rsi >= RSIExit)
+    strategy.entry('BUY', strategy.long, 10)
 
+if closeLongCondition and testPeriod()
+    strategy.close('BUY')

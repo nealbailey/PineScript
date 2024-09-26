@@ -10,10 +10,7 @@
 // ---------------------------------------------------------------------------
 // This is a bullish strategy that trades breakouts. It buys when the share price crosses
 // over the median-middle bollinger band and sells when the price touches the upper bollinger band. 
-//
-// The easiest way to trade this strategyis to buy shares when the buy signal is triggered and 
-// sell when the close signal is triggered. 
-//
+// The easiest way to trade this strategy is to simply buy shares when the signal is triggered. 
 // The most profitable method would be to buy an in-the-money calls/puts around the 70-80 delta. 
 // Or you could use a defined risk entry such as a put credit spread and collect the premium. 
 // ---------------------------------------------------------------------------
@@ -47,7 +44,8 @@ testPeriodStop = timestamp(testStopYear, testStopMonth, testStopDay, 0, 0)
 // A switch to control background coloring of the test period
 testPeriodBackground = input(title='Color Background?', defval=true)
 testPeriodBackgroundColor = testPeriodBackground and time >= testPeriodStart and time <= testPeriodStop ? #6c6f6c : na
-bgcolor(testPeriodBackgroundColor, transp=97)
+colorItem = color.new(testPeriodBackgroundColor, transp = 94)
+bgcolor(colorItem)
 
 // User provided values
 smaLength = input(title='SMA Length', defval=20)  // Middle band period length (moving average)
@@ -77,5 +75,5 @@ closeLongCondition = high >= upperBand -1 // Just below top band
 if longCondition and testPeriod()
     strategy.entry(id='BUY', direction=strategy.long, qty=10)
 
-strategy.close(id='BUY', when=closeLongCondition)
-
+if closeLongCondition and testPeriod()
+    strategy.close(id='BUY')

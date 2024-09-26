@@ -45,7 +45,8 @@ testPeriodStop = timestamp(testStopYear, testStopMonth, testStopDay, 0, 0)
 // A switch to control background coloring of the test period
 testPeriodBackground = input(title='Color Background?', defval=true)
 testPeriodBackgroundColor = testPeriodBackground and time >= testPeriodStart and time <= testPeriodStop ? #6c6f6c : na
-bgcolor(testPeriodBackgroundColor, transp=97)
+colorItem = color.new(testPeriodBackgroundColor, transp = 94)
+bgcolor(colorItem)
 
 // Determine if current bar is within range
 // @returns boolean true or false
@@ -65,8 +66,8 @@ friday_close = (dayofweek == dayofweek.friday)
 longCondition = close > longWMA  
 //shortCondition = friday_close
 
-if longCondition and testPeriod()
-    strategy.entry('VERTICAL', strategy.long, 10, when=close >= curr_week_open)
-    strategy.close('VERTICAL', when=close == curr_week_close and friday_close)
+if longCondition and testPeriod() and close >= curr_week_open
+    strategy.entry('VERTICAL', strategy.long, 10)
 
-
+if longCondition and testPeriod() and close == curr_week_close and friday_close
+    strategy.close('VERTICAL')

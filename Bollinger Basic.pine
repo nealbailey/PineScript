@@ -44,7 +44,8 @@ testPeriodStop = timestamp(testStopYear, testStopMonth, testStopDay, 0, 0)
 // A switch to control background coloring of the test period
 testPeriodBackground = input(title='Color Background?', defval=true)
 testPeriodBackgroundColor = testPeriodBackground and time >= testPeriodStart and time <= testPeriodStop ? #6c6f6c : na
-bgcolor(testPeriodBackgroundColor, transp=97)
+colorItem = color.new(testPeriodBackgroundColor, transp = 94)
+bgcolor(colorItem)
 
 // User provided values
 smaLength = input(title='SMA Length', defval=20)  // Middle band period length (moving average)
@@ -72,6 +73,5 @@ closeLongCondition = close >= upperBand -1 // Just below top band
 if longCondition and testPeriod()
     strategy.entry(id='BUY', direction=strategy.long, qty=10)
 
-strategy.close(id='BUY', when=closeLongCondition)
-
-
+if closeLongCondition and testPeriod()
+    strategy.close(id='BUY')

@@ -12,8 +12,8 @@
 // index ETFs do much better on breakdowns than on breakouts (the reverse pattern
 // of how most individual stocks perform).  
 // ---------------------------------------------------------------------------
-//@version=4
-strategy('Double 7s (Baileysoft)', overlay=true)
+//@version=5
+strategy('Double 7s (Baileysoft)', overlay=true, initial_capital=10000)
 
 // --------------------
 // Strategy Rules
@@ -26,12 +26,12 @@ strategy('Double 7s (Baileysoft)', overlay=true)
 //
 
 // The strategy range (dates)
-testStartYear = input(1990, 'Backtest Start Year')
+testStartYear = input(2004, 'Backtest Start Year')
 testStartMonth = input(01, 'Backtest Start Month')
 testStartDay = input(1, 'Backtest Start Day')
 testPeriodStart = timestamp(testStartYear, testStartMonth, testStartDay, 0, 0)
 
-testStopYear = input(2022, 'Backtest Stop Year')
+testStopYear = input(2030, 'Backtest Stop Year')
 testStopMonth = input(12, 'Backtest Stop Month')
 testStopDay = input(30, 'Backtest Stop Day')
 testPeriodStop = timestamp(testStopYear, testStopMonth, testStopDay, 0, 0)
@@ -39,25 +39,27 @@ testPeriodStop = timestamp(testStopYear, testStopMonth, testStopDay, 0, 0)
 // A switch to control background coloring of the test period
 testPeriodBackground = input(title='Color Background?', defval=true)
 testPeriodBackgroundColor = testPeriodBackground and time >= testPeriodStart and time <= testPeriodStop ? #6c6f6c : na
-bgcolor(testPeriodBackgroundColor, transp=97)
+colorItem = color.new(testPeriodBackgroundColor, transp = 94)
+bgcolor(colorItem)
 
 // The Doubles value
 // Usually Double 7's but can be Double 5's, 6's, 8's, 9's, and 10's
-doublesVal = input(title='Doubles Value', defval=7, minval=5, maxval=10)
+doublesVal = input.int(title='Doubles Value', defval=7, minval=5, maxval=10)
 
 // Determine if current bar is within range
 // @returns boolean true or false
 testPeriod() =>
     time >= testPeriodStart and time <= testPeriodStop ? true : false
 
-longSMA = sma(close, 200)  // 200-day moving average
-highest_close = highest(close, doublesVal)  // price of highest close
-lowest_close = lowest(close, doublesVal)  // price of lowest close
+longSMA = ta.sma(close, 200)  // 200-day moving average
+highest_close = ta.highest(close, doublesVal)  // price of highest close
+lowest_close = ta.lowest(close, doublesVal)  // price of lowest close
 
-longCondition = close > longSMA  // Phase One Entry Condition
+longCondition = close > longSMA and close == lowest_close
+closeLongCondition = close == highest_close
 
 if longCondition and testPeriod()
-    strategy.entry('CALL', strategy.long, 100, when=close == lowest_close)
-    strategy.close('CALL', when=close == highest_close)
+    strategy.entry('CALL', strategy.long, 10)
 
-
+if closeLongCondition and testPeriod()
+    strategy.close('CALL')
