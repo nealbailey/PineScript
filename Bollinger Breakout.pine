@@ -8,9 +8,8 @@
 // https://mozilla.org/MPL/2.0/
 //
 // ---------------------------------------------------------------------------
-// This is a bullish strategy using the Relative Strength Indicator (RSI). 
-// It buys when the RSI indicator value closes below 30 and it sells when the
-// RSI indicator closes above 55. 
+// This is a bullish strategy that trades breakouts. It buys when the share price crosses
+// over the median-middle bollinger band and sells when the price touches the upper bollinger band. 
 //
 // The easiest way to trade this strategyis to buy shares when the buy signal is triggered and 
 // sell when the close signal is triggered. 
@@ -19,22 +18,23 @@
 // Or you could use a defined risk entry such as a put credit spread and collect the premium. 
 // ---------------------------------------------------------------------------
 //@version=5
-strategy('RSI Powerzones', overlay=true, initial_capital=10000, process_orders_on_close = true)
+strategy(title='Bollinger Breakout (Baileysoft)', overlay=true, initial_capital=10000)
 
 // --------------------
 // Strategy Rules
 // --------------------
 // ** Set chart to daily bars **
 //
-// 1. $SPY must be trading above its 200-day simple moving average. 
-// 2. When the 4-period RSI of $SPY closes under 30 buy $SPY on the close.
-// 3. Buy a second unit if the 4-period RSI closes below 25 at any time while the position is open (doubling your position).
-// 4. Sell when the 4-period RSI closes above 55
+// 1. ETF must be trading above its 200-day simple moving average
+// 2. Enter trade when price closes above the middle band
+// 3. Exit trade when price touches the top band
 //
 // Prefer 70-80 delta in-the-money call contracts
+// Do not take a new position anytime the ETF closes under the 200-day MA
+// 
 
-// User provided values
-testStartYear = input(2004, 'Backtest Start Year')
+// Chart Properties
+testStartYear = input(2017, 'Backtest Start Year')
 testStartMonth = input(01, 'Backtest Start Month')
 testStartDay = input(1, 'Backtest Start Day')
 testPeriodStart = timestamp(testStartYear, testStartMonth, testStartDay, 0, 0)
@@ -49,22 +49,33 @@ testPeriodBackground = input(title='Color Background?', defval=true)
 testPeriodBackgroundColor = testPeriodBackground and time >= testPeriodStart and time <= testPeriodStop ? #6c6f6c : na
 bgcolor(testPeriodBackgroundColor, transp=97)
 
-// Entry and exit RSI readings
-RSIEntry = input(30, 'RSI Entry')
-RSIExit = input(55, 'RSI Exit')
-RSILength = input(4, 'RSI Length')
+// User provided values
+smaLength = input(title='SMA Length', defval=20)  // Middle band period length (moving average)
+stdLength = input(title='StdDev Length', defval=20)  // Range to apply bands to
+ubOffset = input.float(title='Upper Band Offset', defval=2.0, step=0.5)  // Number of standard deviations above MA
+lbOffset = input.float(title='Lower Band Offset', defval=2.0, step=0.5)  // Number of standard deviation below MA
 
-// Determine if current bar is within range
-// @returns boolean true or false
 testPeriod() =>
     time >= testPeriodStart and time <= testPeriodStop ? true : false
 
+smaValue = ta.sma(close, smaLength)  // Middle band
+stdDev = ta.stdev(close, stdLength)  // Standard deviation
+upperBand = smaValue + stdDev * ubOffset  // Top band
+lowerBand = smaValue - stdDev * lbOffset  // Bottom band
 longSMA = ta.sma(close, 200)  // 200-day moving average
-rsi = ta.rsi(close, RSILength)  // relative strength indicator with custom length
 
-longCondition = close > longSMA  // closing price is above 200-day sma 
+// Plot bands to chart
+plot(series=smaValue, title='SMA', color=color.new(color.teal, 0))
+plot(series=upperBand, title='UB', color=color.new(color.green, 0), linewidth=2)
+plot(series=lowerBand, title='LB', color=color.new(color.red, 0), linewidth=2)
+
+// Entry criteria (uptrending and crossing median band)
+longCondition = ta.crossover(close, smaValue) and close > longSMA
+// Exit condition (touching the upper band)
+closeLongCondition = high >= upperBand -1 // Just below top band
 
 if longCondition and testPeriod()
-    strategy.entry('CALL', strategy.long, 10, when=rsi <= RSIEntry)
-    strategy.close('CALL', when=rsi >= RSIExit)
+    strategy.entry(id='BUY', direction=strategy.long, qty=10)
+
+strategy.close(id='BUY', when=closeLongCondition)
 

@@ -8,13 +8,17 @@
 // https://mozilla.org/MPL/2.0/
 //
 // ---------------------------------------------------------------------------
-// This is a directional trading strategy. There are a number of ways to trade this strategy. 
-// The easiest would be to simply buy/short shares of the stock when the signals are triggered. 
+// This is a bullish trading strategy that uses mean reversion trends. It enters when the share
+// price cosses above the lower bollinger band and exits when the price touches the upper band. 
+//
+// The easiest way to trade this strategyis to buy shares when the buy signal is triggered and 
+// sell when the close signal is triggered. 
+//
 // The most profitable method would be to buy an in-the-money calls/puts around the 70-80 delta. 
 // Or you could use a defined risk entry such as a put/call credit spread and collect the premium. 
 // ---------------------------------------------------------------------------
 //@version=5
-strategy(title='Basic Bollinger (Baileysoft)', overlay=true, process_orders_on_close = true)
+strategy(title='Bollinger Basic (Baileysoft)', overlay=true, process_orders_on_close = true)
 
 // --------------------
 // Strategy Rules
@@ -66,8 +70,8 @@ longCondition = ta.crossover(close, lowerBand)
 closeLongCondition = close >= upperBand -1 // Just below top band
 
 if longCondition and testPeriod()
-    strategy.entry(id='CALL', direction=strategy.long, qty=10)
+    strategy.entry(id='BUY', direction=strategy.long, qty=10)
 
-strategy.close(id='CALL', when=closeLongCondition)
+strategy.close(id='BUY', when=closeLongCondition)
 
 

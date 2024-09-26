@@ -8,13 +8,16 @@
 // https://mozilla.org/MPL/2.0/
 //
 // ---------------------------------------------------------------------------
-// This is a bullish options income strategy. The trade is setup every monday morning at market open and expires every Friday at market close. 
-// The strategy extracts weekly income from the price spread between selling the first in-the-money put and buying the first out-of-the-money put. 
-// The risk to reward should be 1:1 (e.g risk $500 to win $500). The edge in this strategy is that the S&P500 index typically closes higher on the 
-// week roughly ~80% of the time. 
+// This is a bullish options income strategy. The trade is setup every monday morning 
+// at market open and expires every Friday at market close. The strategy extracts 
+// weekly income from the price spread between selling the first in-the-money put and 
+// buying the first out-of-the-money put. 
+//
+// The risk to reward should be 1:1 (e.g risk $500 to win $500). The edge in this strategy 
+// is that the S&P500 index typically closes higher on the week roughly ~80% of the time. 
 // ---------------------------------------------------------------------------
 //@version=5
-strategy('ATM Vertical Put (Baileysoft)', overlay=true)
+strategy('Momentum Weekly (Baileysoft)', overlay=true)
 
 // --------------------
 // Strategy Rules
