@@ -17,27 +17,28 @@
 // is that the S&P500 index typically closes higher on the week roughly ~80% of the time. 
 // ---------------------------------------------------------------------------
 //@version=5
-strategy('Momentum Weekly (Baileysoft)', overlay=true)
+strategy('Momentum Weekly (Baileysoft)', overlay=true, initial_capital = 10000, process_orders_on_close = false)
 
 // --------------------
 // Strategy Rules
 // --------------------
-// ** Set chart to daily bars **
+// ** Set chart to any intraday period (no charts above 1 hour period will work) **
 //
-// 1. SPY must be trading above its 50 day (or 10 week moving average)
+// 1. SPY must be trading above its 10 period moving average
 // 2. Buy the $SPY put directly below the current price as soon as the market opens on Monday morning
 // 3. Sell the ITM $SPY put directly above the current price as soon as the market opens on Monday morning
+// 4. Allow contract to expire on Friday afternoon at the market close 
 //
 // Risk to Ratio should be 1:1 (e.g. risk $500 to win $500)
 //
 
 // The strategy range (dates)
-testStartYear = input(2017, 'Backtest Start Year')
+testStartYear = input(2023, 'Backtest Start Year')
 testStartMonth = input(01, 'Backtest Start Month')
 testStartDay = input(1, 'Backtest Start Day')
 testPeriodStart = timestamp(testStartYear, testStartMonth, testStartDay, 0, 0)
 
-testStopYear = input(2024, 'Backtest Stop Year')
+testStopYear = input(2025, 'Backtest Stop Year')
 testStopMonth = input(12, 'Backtest Stop Month')
 testStopDay = input(30, 'Backtest Stop Day')
 testPeriodStop = timestamp(testStopYear, testStopMonth, testStopDay, 0, 0)
@@ -53,21 +54,27 @@ bgcolor(colorItem)
 testPeriod() =>
     time >= testPeriodStart and time <= testPeriodStop ? true : false
 
-longWMA = ta.wma(close, 10)  // 10 day weighted moving average
-// Get the open price of the current week's candle
-curr_week_open = request.security(syminfo.tickerid, "W", open)
-// Get the close price of the current week's candle
-curr_week_close = request.security(syminfo.tickerid, "W", close)
+longWMA = ta.wma(close, 10)  // 10 period weighted moving average
 
-// Set Monday and Friday variables
-//monday_open = (dayofweek == dayofweek.monday)
-friday_close = (dayofweek == dayofweek.friday)
+longCondition = open > longWMA  
 
-longCondition = close > longWMA  
-//shortCondition = friday_close
+// Get the day of the week (1 is Monday, 5 is Friday)
+dayOfWeek = dayofweek
 
-if longCondition and testPeriod() and close >= curr_week_open
-    strategy.entry('VERTICAL', strategy.long, 10)
+// Check if it's Monday and the market is open (i.e., start of a new candle)
+enterTrade = (testPeriod() and dayOfWeek == dayofweek.monday) and (time  == timestamp("GMT-4", year, month, dayofmonth, 9, 30))
 
-if longCondition and testPeriod() and close == curr_week_close and friday_close
-    strategy.close('VERTICAL')
+// Check if it's Friday and the market is about to close (i.e., end of Friday candle)
+exitTrade = (testPeriod() and dayOfWeek == dayofweek.friday) and (time_close == timestamp("GMT-4", year, month, dayofmonth, 15, 30))
+
+// Enter a long position on Monday at open
+if (enterTrade)
+    strategy.entry("Spread", strategy.long, 10)
+
+// Exit the position on Friday at close
+if (exitTrade)
+    strategy.close("Spread")
+
+// Plot signals for better visualization
+plotshape(enterTrade, title="Buy on Monday", location=location.belowbar, color=color.green, style=shape.labelup, text="BUY", textcolor = color.white)
+plotshape(exitTrade, title="Sell on Friday", location=location.abovebar, color=color.red, style=shape.labeldown, text="SELL", textcolor = color.white)
